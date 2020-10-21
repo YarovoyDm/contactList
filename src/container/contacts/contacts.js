@@ -31,7 +31,6 @@ const sortOptions = [
 class Contacts extends React.Component {
 
     state = {
-        viewMode: 'table',
         users: [],
         selectedOption: {
             label: "Default",
@@ -64,12 +63,14 @@ class Contacts extends React.Component {
         maleCollection: {},
         nameFilter: '',
         nameCollection: {},
-        tableView: true
+        tableView: null
     }
 
     componentDidMount() {
+        !window.localStorage.getItem('tableViewMode') && window.localStorage.setItem('tableViewMode', true)
         this.setState({
-            collectionSize: _.random(10, 50)
+            collectionSize: _.random(10, 50),
+            tableView: JSON.parse(window.localStorage.getItem('tableViewMode'))
         }, () => {
             API(this.state.collectionSize).then((res) => {
                 this.setState({
@@ -274,6 +275,8 @@ class Contacts extends React.Component {
     onViewChange = (e) => {
         this.setState({
             tableView: e.target.checked
+        }, () => {
+            window.localStorage.setItem('tableViewMode', this.state.tableView);
         })
     }
 
