@@ -7,6 +7,7 @@
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
     "axios": "^0.20.0",
+    "classnames": "^2.2.6",
     "copy-to-clipboard": "^3.3.1",
     "history": "^5.0.0",
     "lodash": "^4.17.20",
@@ -18,7 +19,8 @@
     "react-scripts": "3.4.3",
     "react-select": "^3.1.0",
     "react-table": "^7.6.0",
-    "react-table-v6": "^6.8.6"
+    "react-table-v6": "^6.8.6",
+    "react-toggle": "^4.1.1"
   },
   "scripts": {
     "start": "react-scripts start",

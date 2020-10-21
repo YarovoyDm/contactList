@@ -2,8 +2,13 @@ import React from 'react';
 import * as _ from 'lodash';
 import Select from 'react-select';
 import copy from 'copy-to-clipboard';
+import Toggle from 'react-toggle';
+import ReactTable from 'react-table-v6'
+import cn from 'classnames'
 import { API } from '../../utils';
 import './contacts.css'
+import "react-toggle/style.css"
+import 'react-table-v6/react-table.css'
 
 import moment from 'moment';
 moment().format();
@@ -58,7 +63,8 @@ class Contacts extends React.Component {
         femaleCollection: {},
         maleCollection: {},
         nameFilter: '',
-        nameCollection: {}
+        nameCollection: {},
+        tableView: true
     }
 
     componentDidMount() {
@@ -106,11 +112,11 @@ class Contacts extends React.Component {
         return _.map(nationalities, nat => {
             const natLenght = _.filter(this.state.users, user => user.nat === nat).length
             return <div key={nat}>
-                <input 
-                    type="checkbox" 
-                    disabled={!natLenght} 
-                    checked={this.state.nationalitiesFilter.nat} 
-                    onChange={() => this.natCheckbox(nat)} 
+                <input
+                    type="checkbox"
+                    disabled={!natLenght}
+                    checked={this.state.nationalitiesFilter.nat}
+                    onChange={() => this.natCheckbox(nat)}
                 />
                 {nat}: {natLenght}
             </div>
@@ -145,22 +151,62 @@ class Contacts extends React.Component {
     genderFilter = () => {
         return <>
             <div>
-                <input 
-                    type="checkbox" 
-                    checked={this.state.femaleFilter} 
-                    onChange={() => this.genderCheckbox('femaleFilter')} 
+                <input
+                    type="checkbox"
+                    checked={this.state.femaleFilter}
+                    onChange={() => this.genderCheckbox('femaleFilter')}
                 />
                 Женщины
             </div>
             <div>
-                <input 
-                    type="checkbox" 
-                    checked={this.state.maleFilter} 
-                    onChange={() => this.genderCheckbox('maleFilter')} 
+                <input
+                    type="checkbox"
+                    checked={this.state.maleFilter}
+                    onChange={() => this.genderCheckbox('maleFilter')}
                 />
                 Мужчины
             </div>
         </>
+    }
+
+    renderTableView = (data) => {
+        const columns = [{
+            id: 'name',
+            Header: 'Name',
+            accessor: user => user.name.first + ' ' + user.name.last,
+            width: 150
+        },{
+            Header: 'Email',
+            accessor: 'email',
+            Cell: props => <span className='copyble' onClick={() => copy(props.value)}>{props.value}</span>,
+            width: 250
+        }, {
+            Header: 'Phone',
+            accessor: 'phone',
+            Cell: props => <span className='copyble' onClick={() => copy(props.value)}>{props.value}</span>,
+            width: 120
+        }, {
+            id: 'address',
+            Header: 'Address',
+            accessor: user => user.location.street.number + ' ' + user.location.street.name + ' ' + user.location.city + ' ' + user.location.state,
+        }, {
+            Header: 'Postcode',
+            accessor: 'location.postcode',
+            width: 80
+        }, {
+            id: 'birthday',
+            Header: 'Birthday',
+            accessor: user => moment(user.dob.date).format('MM-DD-YYYY'),
+            width: 100
+        }]
+
+        return <ReactTable
+            className="main-table"
+            data={data}
+            defaultPageSize={15}
+            pageSizeOptions={[5, 10, 15]}
+            columns={columns}
+        />
     }
 
     renderUsers = () => {
@@ -175,30 +221,35 @@ class Contacts extends React.Component {
             data = this.state.femaleCollection
         } else if (isMaleFilterSelected) {
             data = this.state.maleCollection
-        } else if (isNameFilterSelected){
+        } else if (isNameFilterSelected) {
             data = this.state.nameCollection
-        }else {
+        } else {
             data = this.state.users
         }
         const isSortTypeDefault = this.state.selectedOption.value === 'default'
         const isSortTypeAtoZ = this.state.selectedOption.value === 'AtoZ'
         let sortedDataAtoZ = []
-        if(this.state.selectedOption.value === 'AtoZ'){
+        if (this.state.selectedOption.value === 'AtoZ') {
             sortedDataAtoZ = _.sortBy(data, (item) => item.name.first.toLowerCase())
         }
         let sortedDataZtoA = _.reverse(_.sortBy(data, (item) => item.name.first.toLowerCase()))
         const getCorrentSortType = isSortTypeDefault ? data : isSortTypeAtoZ ? sortedDataAtoZ : sortedDataZtoA
-        return _.map(getCorrentSortType, (user, index) => {
+        return this.state.tableView 
+        ? 
+        this.renderTableView(getCorrentSortType) 
+        : 
+        _.map(getCorrentSortType, (user, index) => {
             return <div key={index}>
                 <div className='user'>
                     <div>{user.name.first} {user.name.last}</div>
                     <div className='copyble' onClick={() => copy(user.email)}>{user.email}</div>
                     <div className='copyble' onClick={() => copy(user.phone)}>{user.phone}</div>
                     <div>
-                        {user.location.street.number} 
-                        {user.location.street.name}, 
-                        {user.location.city}, 
-                        {user.location.state}, 
+                        {user.location.street.number} &nbsp;
+                        {user.location.street.name}, &nbsp;
+                        {user.location.city}, &nbsp;
+                        {user.location.state}, &nbsp;
+                        <br />
                         {user.location.postcode}</div>
                     <div>{moment(user.dob.date).format('MM-DD-YYYY')}</div>
                 </div>
@@ -220,6 +271,12 @@ class Contacts extends React.Component {
         })
     }
 
+    onViewChange = (e) => {
+        this.setState({
+            tableView: e.target.checked
+        })
+    }
+
     render() {
         const { selectedOption, femaleCollection, maleCollection, users } = this.state;
         return (
@@ -232,12 +289,19 @@ class Contacts extends React.Component {
                         <div className="hello">Количество мужчин: {maleCollection.length}</div>
                         {this.genderWinner()}
                     </div>
+                    <div className="main-view">
+                        Table view <Toggle checked={this.state.tableView} onChange={this.onViewChange} />
+                    </div>
                     <div className='main-filters'>
                         <div className="filters-title">Filters</div>
                         <button onClick={() => this.update()}>Update</button>
                         <div className="filters-name">
                             <div className="filters-name-title">Name filter</div>
-                            <input value={this.state.nameFilter} onChange={this.onNameFilterChange}/>
+                            <input
+                                value={this.state.nameFilter}
+                                placeholder='Name...'
+                                onChange={this.onNameFilterChange}
+                            />
                         </div>
                         <div className="filters-gender">
                             <div className="filters-gender-title">Gender filter</div>
@@ -262,7 +326,7 @@ class Contacts extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div className='main-right'>
+                <div className={cn('main-right', {'main-right-grid': !this.state.tableView})}>
                     {this.renderUsers()}
                 </div>
             </div>

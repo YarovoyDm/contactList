@@ -27,7 +27,20 @@
     align-items: flex-start;
 }
 
+.main-view{
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 50px;
+    margin-bottom: 30px;
+}
+
 .main-right {
+    display: block;
+    width: 80%;
+}
+
+.main-right-grid{
     display: grid;
     grid-template-columns: 323px 323px 75px;
     grid-template-rows: auto auto auto;
