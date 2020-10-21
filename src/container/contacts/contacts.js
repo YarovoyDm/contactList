@@ -5,12 +5,13 @@ import copy from 'copy-to-clipboard';
 import Toggle from 'react-toggle';
 import ReactTable from 'react-table-v6'
 import cn from 'classnames'
+import moment from 'moment';
 import { API } from '../../utils';
+
 import './contacts.css'
-import "react-toggle/style.css"
+import 'react-toggle/style.css'
 import 'react-table-v6/react-table.css'
 
-import moment from 'moment';
 moment().format();
 
 const nationalities = [
@@ -63,7 +64,7 @@ class Contacts extends React.Component {
         maleCollection: {},
         nameFilter: '',
         nameCollection: {},
-        tableView: null
+        tableView: true
     }
 
     componentDidMount() {
@@ -74,12 +75,9 @@ class Contacts extends React.Component {
         }, () => {
             API(this.state.collectionSize).then((res) => {
                 this.setState({
-                    users: res.data.results
-                }, () => {
-                    this.setState({
-                        femaleCollection: _.filter(this.state.users, user => user.gender === 'female'),
-                        maleCollection: _.filter(this.state.users, user => user.gender === 'male')
-                    })
+                    users: res.data.results,
+                    femaleCollection: _.filter(res.data.results, user => user.gender === 'female'),
+                    maleCollection: _.filter(res.data.results, user => user.gender === 'male')
                 })
             })
         })
@@ -125,20 +123,22 @@ class Contacts extends React.Component {
     }
 
     genderWinner = () => {
-        if (this.state.femaleCollection.length === this.state.maleCollection.length) {
-            return 'Паритет'
+        if (this.state.femaleCollection.length < this.state.maleCollection.length) {
+            return 'Мужчин больше'
         }
         if (this.state.femaleCollection.length > this.state.maleCollection.length) {
             return 'Женщин больше'
         } else {
-            return 'Мужчин больше'
+            return 'Паритет'
         }
     }
 
     update = () => {
         API(this.state.collectionSize).then((res) => {
             this.setState({
-                users: res.data.results
+                users: res.data.results,
+                femaleCollection: _.filter(res.data.results, user => user.gender === 'female'),
+                maleCollection: _.filter(res.data.results, user => user.gender === 'male')
             })
         })
     }
@@ -176,15 +176,27 @@ class Contacts extends React.Component {
             Header: 'Name',
             accessor: user => user.name.first + ' ' + user.name.last,
             width: 150
-        },{
+        }, {
             Header: 'Email',
             accessor: 'email',
-            Cell: props => <span className='copyble' onClick={() => copy(props.value)}>{props.value}</span>,
+            Cell: props => 
+                <span 
+                    className='copyble' 
+                    onClick={() => copy(props.value)}
+                >
+                    {props.value}
+                </span>,
             width: 250
         }, {
             Header: 'Phone',
             accessor: 'phone',
-            Cell: props => <span className='copyble' onClick={() => copy(props.value)}>{props.value}</span>,
+            Cell: props => 
+                <span 
+                    className='copyble' 
+                    onClick={() => copy(props.value)}
+                >
+                    {props.value}
+                </span>,
             width: 120
         }, {
             id: 'address',
@@ -210,36 +222,8 @@ class Contacts extends React.Component {
         />
     }
 
-    renderUsers = () => {
-        const isFemaleFilterSelected = this.state.femaleFilter
-        const isMaleFilterSelected = this.state.maleFilter
-        const isNameFilterSelected = this.state.nameFilter
-        const isNatFilterSelected = _.isEmpty(this.state.filteredByNat)
-        let data = []
-        if (!isNatFilterSelected) {
-            data = this.state.filteredByNat
-        } else if (isFemaleFilterSelected) {
-            data = this.state.femaleCollection
-        } else if (isMaleFilterSelected) {
-            data = this.state.maleCollection
-        } else if (isNameFilterSelected) {
-            data = this.state.nameCollection
-        } else {
-            data = this.state.users
-        }
-        const isSortTypeDefault = this.state.selectedOption.value === 'default'
-        const isSortTypeAtoZ = this.state.selectedOption.value === 'AtoZ'
-        let sortedDataAtoZ = []
-        if (this.state.selectedOption.value === 'AtoZ') {
-            sortedDataAtoZ = _.sortBy(data, (item) => item.name.first.toLowerCase())
-        }
-        let sortedDataZtoA = _.reverse(_.sortBy(data, (item) => item.name.first.toLowerCase()))
-        const getCorrentSortType = isSortTypeDefault ? data : isSortTypeAtoZ ? sortedDataAtoZ : sortedDataZtoA
-        return this.state.tableView 
-        ? 
-        this.renderTableView(getCorrentSortType) 
-        : 
-        _.map(getCorrentSortType, (user, index) => {
+    renderTileView = (data) => {
+        return _.map(data, (user, index) => {
             return <div key={index}>
                 <div className='user'>
                     <div>{user.name.first} {user.name.last}</div>
@@ -258,30 +242,81 @@ class Contacts extends React.Component {
         })
     }
 
+    renderUsers = () => {
+        const {
+            femaleFilter,
+            maleFilter,
+            nameFilter,
+            filteredByNat,
+            femaleCollection,
+            maleCollection,
+            nameCollection,
+            users,
+            selectedOption,
+            tableView
+        } = this.state
+
+        const isFemaleFilterSelected = femaleFilter
+        const isMaleFilterSelected = maleFilter
+        const isNameFilterSelected = nameFilter
+        const isNatFilterSelected = _.isEmpty(filteredByNat)
+        let data = []
+        if (!isNatFilterSelected) {
+            data = filteredByNat
+        } else if (isFemaleFilterSelected) {
+            data = femaleCollection
+        } else if (isMaleFilterSelected) {
+            data = maleCollection
+        } else if (isNameFilterSelected) {
+            data = nameCollection
+        } else {
+            data = users
+        }
+        const isSortTypeDefault = selectedOption.value === 'default'
+        const isSortTypeAtoZ = selectedOption.value === 'AtoZ'
+        let sortedDataAtoZ = []
+        if (selectedOption.value === 'AtoZ') {
+            sortedDataAtoZ = _.sortBy(data, (item) => item.name.first.toLowerCase())
+        }
+        let sortedDataZtoA = _.reverse(_.sortBy(data, (item) => item.name.first.toLowerCase()))
+        const sortOrder = isSortTypeAtoZ ? sortedDataAtoZ : sortedDataZtoA
+        const getCorrentSortType = isSortTypeDefault ? data : sortOrder
+        return tableView
+            ?
+            this.renderTableView(getCorrentSortType)
+            :
+            this.renderTileView(getCorrentSortType)
+    }
+
     handleChange = selectedOption => {
-        this.setState({ selectedOption });
-    };
+        this.setState({ selectedOption })
+    }
 
     onNameFilterChange = (e) => {
         this.setState({
-            nameFilter: e.target.value
-        }, () => {
-            this.setState({
-                nameCollection: _.filter(this.state.users, user => _.startsWith(user.name.first.toLowerCase(), this.state.nameFilter.toLowerCase()))
-            })
+            nameFilter: e.target.value,
+            nameCollection: _.filter(this.state.users, user => 
+                _.startsWith(user.name.first.toLowerCase(), e.target.value.toLowerCase()))
         })
     }
 
     onViewChange = (e) => {
         this.setState({
-            tableView: e.target.checked
-        }, () => {
-            window.localStorage.setItem('tableViewMode', this.state.tableView);
+            tableView: e.target.checked,
         })
+        window.localStorage.setItem('tableViewMode', e.target.checked);
     }
 
     render() {
-        const { selectedOption, femaleCollection, maleCollection, users } = this.state;
+        const {
+            selectedOption,
+            femaleCollection,
+            maleCollection,
+            users,
+            tableView,
+            nameFilter
+        } = this.state;
+
         return (
             <div className='main'>
                 <div className='main-left'>
@@ -293,7 +328,7 @@ class Contacts extends React.Component {
                         {this.genderWinner()}
                     </div>
                     <div className="main-view">
-                        Table view <Toggle checked={this.state.tableView} onChange={this.onViewChange} />
+                        Table view <Toggle checked={tableView} onChange={this.onViewChange} />
                     </div>
                     <div className='main-filters'>
                         <div className="filters-title">Filters</div>
@@ -301,7 +336,7 @@ class Contacts extends React.Component {
                         <div className="filters-name">
                             <div className="filters-name-title">Name filter</div>
                             <input
-                                value={this.state.nameFilter}
+                                value={nameFilter}
                                 placeholder='Name...'
                                 onChange={this.onNameFilterChange}
                             />
@@ -329,7 +364,7 @@ class Contacts extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div className={cn('main-right', {'main-right-grid': !this.state.tableView})}>
+                <div className={cn('main-right', { 'main-right-grid': !tableView })}>
                     {this.renderUsers()}
                 </div>
             </div>
