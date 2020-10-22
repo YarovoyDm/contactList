@@ -7,9 +7,7 @@ import history from './history';
 import { Router } from 'react-router-dom';
 
 ReactDOM.render(
-  <Router history={history}>
-      <App />
-  </Router>,
+  <b>aveo</b>,
   document.getElementById('root')
 );
 
