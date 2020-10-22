@@ -7,7 +7,7 @@ class App extends React.Component {
   render() {
     return (<>
       <Switch>
-        <Route path='/contacts' exact={true} component={Contacts} />
+        <Route component={Contacts} />
       </Switch>
     </>
     )
