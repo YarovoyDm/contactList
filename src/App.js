@@ -8,6 +8,7 @@ class App extends React.Component {
     return (<>
       <Switch>
         <Route component={Contacts} />
+        {/* <Route path='/contacts' exact={true} component={Contacts} /> for localhost check, can't setup github pages for SPA*/} 
       </Switch>
     </>
     )
